@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16202b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Packing List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16202b; --ink-2:#54626e; --faint:#9aa7b1;
+  --paper:#eceef0; --card:#fff; --line:#d8dee3; --hair:#eef1f3;
+  --teal:#1f6f68; --slate:#8996a1; --red:#b4453a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px calc(96px + env(safe-area-inset-bottom))}
+
+.tag{background:var(--ink);color:#fff;border-radius:12px;padding:16px 18px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;position:relative;overflow:hidden}
+.tag::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background-image:radial-gradient(circle at 5px 3px,var(--paper) 3px,transparent 3.5px);background-size:12px 6px}
+.tag h1{font-family:'Oswald',Impact,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(22px,6.5vw,34px);margin:0;line-height:1;outline:none}
+.tag h1:empty::before{content:"Untitled trip";color:#5d7280}
+.sub{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8fa3ad;margin-top:9px}
+.count{font-family:'JetBrains Mono',ui-monospace,monospace;text-align:right;flex:0 0 auto}
+.count b{display:block;font-size:28px;font-weight:600;line-height:1}
+.count span{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8fa3ad}
+
+.bar{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 8px}
+button{font-family:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:8px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink-2)}
+button:focus-visible,input:focus-visible,[contenteditable]:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+button.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.legend{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-2);letter-spacing:.04em;margin:0 0 14px 2px;line-height:1.7}
+
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--hair)}
+.row:last-child{border-bottom:0}
+.row[data-depth="0"]>.label{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:16px;font-weight:500}
+.row[data-depth="0"].branch{background:#fbfcfc}
+.indent{flex:0 0 auto;align-self:stretch;display:flex}
+.indent i{display:block;width:16px;border-left:1px solid var(--line);margin-left:7px}
+.caret{border:0;background:transparent;color:var(--faint);width:20px;min-height:20px;padding:0;font-size:11px;flex:0 0 20px;cursor:pointer;line-height:1}
+.caret.pad{visibility:hidden}
+
+.box{width:23px;height:23px;flex:0 0 23px;border:1.5px solid var(--line);border-radius:5px;background:#fff;padding:0;min-height:0;position:relative;cursor:pointer}
+.box:hover{border-color:var(--ink-2)}
+.box.packed{background:var(--teal);border-color:var(--teal)}
+.box.packed::after{content:"";position:absolute;left:6px;top:3px;width:6px;height:12px;border:2px solid #fff;border-top:0;border-left:0;transform:rotate(42deg)}
+.box.na{border-color:var(--slate);border-style:dashed;background:#f4f6f7}
+.box.na::after{content:"";position:absolute;left:4px;top:9.5px;width:13px;height:1.5px;background:var(--slate)}
+.box.partial{border-color:var(--teal)}
+.box.partial::after{content:"";position:absolute;left:4.5px;top:9.5px;width:12px;height:2px;background:var(--teal)}
+
+.label{flex:1;min-width:0;word-break:break-word;outline:none}
+.row.packed>.label{color:var(--faint);text-decoration:line-through}
+.row.na>.label{color:#b6c0c7;text-decoration:line-through}
+
+/* counter */
+.stp{display:flex;align-items:center;flex:0 0 auto;border:1.5px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}
+.stp button{border:0;background:transparent;font-size:16px;padding:0;width:28px;min-height:26px;line-height:1;color:var(--ink-2);border-radius:0}
+.stp button:hover{background:#f1f4f5;color:var(--ink)}
+.stp .qty{width:30px;border:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;padding:3px 0;background:transparent;color:var(--ink);-moz-appearance:textfield}
+.stp.filled{border-color:var(--teal)}
+.stp.filled .qty{color:var(--teal)}
+.stp.na{border-style:dashed;background:#f4f6f7}
+.stp.na .qty{color:#b6c0c7}
+
+.tally{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.dots{border:0;background:transparent;color:#b9c3ca;font-size:17px;padding:0 6px;min-height:34px;cursor:pointer;line-height:1;letter-spacing:1px}
+.dots:hover{color:var(--ink)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px;border-bottom:1px solid var(--hair);background:#f8fafb}
+.acts button{font-size:12.5px;padding:6px 10px;min-height:32px}
+.acts .del{color:var(--red)}
+.addrow{display:flex;gap:7px;padding:10px 12px;background:#f8fafb;border-bottom:1px solid var(--hair)}
+.addrow input{flex:1;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:38px;background:#fff}
+.foot{display:flex;gap:7px;padding:11px 12px;background:#f8fafb}
+.foot input{flex:1;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-height:40px;background:#fff}
+.note{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-2);text-align:center;margin-top:20px;letter-spacing:.06em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="tag">
+    <div style="min-width:0">
+      <h1 id="trip" contenteditable="true" spellcheck="false"></h1>
+      <div class="sub" id="stamp">&nbsp;</div>
+    </div>
+    <div class="count"><b id="total">0/0</b><span>sorted</span></div>
+  </div>
+
+  <div class="bar">
+    <button id="hide">Hide sorted</button>
+    <button id="collapse">Collapse all</button>
+    <button id="reset">Reset for next trip</button>
+    <button id="exp">Export</button>
+    <button id="impBtn">Import</button>
+  </div>
+  <div class="legend">
+    Item box: once = packed · twice = not taking · again = clear<br>
+    Category box: settle it — keeps your check marks, strikes out the rest
+  </div>
+
+  <div class="sheet" id="sheet"></div>
+
+  <div class="note" id="note">Saves automatically</div>
+</div>
+
+<script>
+/* ---------- storage: works inside Claude and on a plain web host ---------- */
+const KEY = 'packing:v4';
+const store = {
+  async get(){
+    if (window.storage){ const r = await window.storage.get(KEY); return r.value; }
+    return localStorage.getItem(KEY);
+  },
+  async set(v){
+    if (window.storage) return window.storage.set(KEY, v);
+    localStorage.setItem(KEY, v);
+  }
+};
+
+/* st: 0 unsorted · 1 packed · 2 not taking.  mode: 'check' | 'count' (count uses qty) */
+const uid = () => Math.random().toString(36).slice(2,9);
+const N = (text, kids=[]) => ({id:uid(), text, st:0, mode:'check', qty:0, open:true, kids});
+const C = (text, want=0) => { const n = N(text); n.mode='count'; n.qty=want; return n; };
+
+const SEED = {
+  trip: 'Packing List',
+  nodes: [
+    N('Laptop'),
+    N('Phone', [N('Table Charger'), N('Spare Charger')]),
+    N('Samsung Buds'),
+    N('Wallet'),
+    N('Keys'),
+    C('Books', 0),
+    N('Tefillin'),
+    N('Underwear', [C('Boxers'), C('Undershirts'), N('PJ Shorts')]),
+    N('Shabbos Clothes', [
+      N('Shabbos Shirts', [N('Collar Stays'), N('Cufflinks')]),
+      N('Shabbos Tzitzis'),
+      N('Suit Pants', [N('Belt')]),
+      N('Suit Jacket'),
+      C('Ties'),
+      N('Hat'),
+      N('Raincoat'),
+      C('Socks'),
+      N('Shabbos Shoes')
+    ]),
+    N('Weekday Clothes', [
+      C('Button Shirts'),
+      C('Polos'),
+      C('Weekday Tzitzis'),
+      C('Weekday Pants'),
+      C('Socks'),
+      N('Shoes', [N('Allbirds Trees'), N('Allbirds Sugars')])
+    ]),
+    N('Toiletries', [N('Deodorant'), N('Cologne'), N('Meds')]),
+    N('Specialty Items', [
+      N('Fan'), N('Pool Go Bag'), N('Water Bottle'), N('Bed Items'),
+      N('Bathrobe'), N('Shaver'), N('R"H/Y"K'), N('Boots'),
+      N('Nail Clipper'), N('Pilot Headset')
+    ])
+  ]
+};
+
+let data = null, hideSorted = false, openActs = null, adding = null;
+
+/* ---------- tree ---------- */
+function walk(nodes, fn){ nodes.forEach(n => { fn(n, nodes); walk(n.kids, fn); }); }
+function find(id){ let hit=null; walk(data.nodes,(n,s)=>{ if(n.id===id) hit={node:n,siblings:s}; }); return hit; }
+function leaves(n){ return n.kids.length ? n.kids.flatMap(leaves) : [n]; }
+function isSorted(l){ return l.st === 2 || (l.mode === 'count' ? l.qty > 0 : l.st === 1); }
+function isPacked(l){ return l.st !== 2 && (l.mode === 'count' ? l.qty > 0 : l.st === 1); }
+
+function view(n){
+  if (!n.kids.length) return n.st === 2 ? 'na' : (isPacked(n) ? 'packed' : 'open');
+  const ls = leaves(n);
+  const s = ls.filter(isSorted);
+  if (!s.length) return 'open';
+  if (s.length < ls.length) return 'partial';
+  return ls.some(isPacked) ? 'packed' : 'na';
+}
+
+/* leaf: 0 -> packed -> not taking -> 0 */
+function cycleLeaf(n){
+  if (n.st === 2){ n.st = 0; if (n.mode === 'count') n.qty = 0; return; }
+  if (isPacked(n)){ n.st = 2; return; }
+  if (n.mode === 'count'){ n.qty = 1; n.st = 0; } else n.st = 1;
+}
+/* category: settle (keep checks, strike the rest) -> reopen */
+function settle(n){
+  const ls = leaves(n);
+  if (ls.every(isSorted)){                 // reopen
+    ls.forEach(l => { l.st = 0; if (l.mode === 'count') l.qty = 0; });
+  } else {
+    ls.forEach(l => { if (!isSorted(l)) l.st = 2; });
+  }
+}
+
+/* ---------- render ---------- */
+function render(){
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = '';
+
+  const draw = (nodes, depth) => {
+    nodes.forEach(n => {
+      const v = view(n);
+      if (hideSorted && (v === 'packed' || v === 'na')) return;
+
+      const row = document.createElement('div');
+      row.className = 'row ' + v + (n.kids.length ? ' branch' : '');
+      row.dataset.depth = Math.min(depth, 3);
+
+      let ind = '';
+      for (let i = 0; i < depth; i++) ind += '<i></i>';
+      const ls = leaves(n);
+      const isCount = !n.kids.length && n.mode === 'count';
+
+      row.innerHTML =
+        (depth ? `<span class="indent">${ind}</span>` : '') +
+        (n.kids.length
+          ? `<button class="caret" data-caret="${n.id}" aria-label="Expand or collapse">${n.open ? '▾' : '▸'}</button>`
+          : `<span class="caret pad"></span>`) +
+        (isCount
+          ? `<span class="stp ${n.st===2 ? 'na' : (n.qty>0 ? 'filled' : '')}">
+               <button data-minus="${n.id}" aria-label="One fewer">−</button>
+               <input class="qty" inputmode="numeric" data-qty="${n.id}" value="${n.st===2 ? 0 : n.qty}">
+               <button data-plus="${n.id}" aria-label="One more">+</button>
+             </span>`
+          : `<button class="box ${v}" data-box="${n.id}" aria-label="Change status of ${esc(n.text)}"></button>`) +
+        `<span class="label" contenteditable="true" spellcheck="false" data-text="${n.id}">${esc(n.text)}</span>` +
+        (n.kids.length ? `<span class="tally">${ls.filter(isSorted).length}/${ls.length}</span>` : '') +
+        `<button class="dots" data-acts="${n.id}" aria-label="Options">···</button>`;
+      sheet.appendChild(row);
+
+      if (openActs === n.id){
+        const a = document.createElement('div');
+        a.className = 'acts';
+        a.innerHTML =
+          `<button data-sub="${n.id}">Add item inside</button>` +
+          (n.kids.length ? '' :
+            `<button data-mode="${n.id}">${n.mode === 'count' ? 'Use a check box' : 'Use a count'}</button>` +
+            `<button data-na="${n.id}">${n.st === 2 ? 'Clear' : 'Not taking'}</button>`) +
+          `<button data-up="${n.id}">Move up</button>` +
+          `<button data-down="${n.id}">Move down</button>` +
+          `<button class="del" data-del="${n.id}">Delete</button>`;
+        sheet.appendChild(a);
+      }
+      if (adding === n.id){
+        const r = document.createElement('div');
+        r.className = 'addrow';
+        r.innerHTML = `<input placeholder="Add under ${esc(n.text)} — # for a count" data-new="${n.id}"><button data-addgo="${n.id}">Add</button>`;
+        sheet.appendChild(r);
+      }
+      if (n.kids.length && n.open) draw(n.kids, depth + 1);
+    });
+  };
+  draw(data.nodes, 0);
+
+  const foot = document.createElement('div');
+  foot.className = 'foot';
+  foot.innerHTML = `<input placeholder="Add item — end with # for a count" data-new="ROOT"><button class="primary" data-addgo="ROOT">Add</button>`;
+  sheet.appendChild(foot);
+
+  const all = data.nodes.flatMap(leaves);
+  const sorted = all.filter(isSorted).length;
+  const packed = all.filter(isPacked).length;
+  document.getElementById('total').textContent = sorted + '/' + all.length;
+  document.getElementById('stamp').textContent =
+    !all.length ? 'Empty list'
+    : sorted === all.length ? packed + ' items packed, nothing left'
+    : (all.length - sorted) + ' still to sort';
+  document.getElementById('trip').textContent = data.trip || '';
+  document.getElementById('hide').className = hideSorted ? 'on' : '';
+
+  const f = sheet.querySelector('[data-new]:not([data-new="ROOT"])');
+  if (f) f.focus();
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+let saveT;
+function save(){
+  clearTimeout(saveT);
+  saveT = setTimeout(async () => {
+    try { await store.set(JSON.stringify(data)); }
+    catch(e){ document.getElementById('note').textContent = 'Could not save — changes are only on screen'; }
+  }, 120);
+}
+function commit(){ save(); render(); }
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-box],[data-caret],[data-acts],[data-sub],[data-up],[data-down],[data-del],[data-addgo],[data-plus],[data-minus],[data-mode],[data-na]');
+  if (!b) return;
+  const d = b.dataset;
+
+  if (d.box){
+    const {node} = find(d.box);
+    node.kids.length ? settle(node) : cycleLeaf(node);
+    return commit();
+  }
+  if (d.plus){ const {node} = find(d.plus); node.st = 0; node.qty++; return commit(); }
+  if (d.minus){ const {node} = find(d.minus); node.st = 0; node.qty = Math.max(0, node.qty - 1); return commit(); }
+  if (d.mode){
+    const {node} = find(d.mode);
+    if (node.mode === 'count'){ node.mode = 'check'; node.st = node.qty > 0 ? 1 : 0; }
+    else { node.mode = 'count'; node.qty = node.st === 1 ? 1 : 0; node.st = node.st === 2 ? 2 : 0; }
+    openActs = null; return commit();
+  }
+  if (d.na){
+    const {node} = find(d.na);
+    if (node.st === 2){ node.st = 0; node.qty = 0; } else node.st = 2;
+    openActs = null; return commit();
+  }
+  if (d.caret){ const {node} = find(d.caret); node.open = !node.open; return commit(); }
+  if (d.acts){ openActs = (openActs === d.acts ? null : d.acts); adding = null; return render(); }
+  if (d.sub){ adding = d.sub; openActs = null; find(d.sub).node.open = true; return render(); }
+  if (d.del){
+    const {node, siblings} = find(d.del);
+    if (node.kids.length && !confirm('Delete "' + node.text + '" and everything under it?')) return;
+    siblings.splice(siblings.indexOf(node), 1); openActs = null; return commit();
+  }
+  if (d.up || d.down){
+    const dir = d.up ? -1 : 1;
+    const {node, siblings} = find(d.up || d.down);
+    const i = siblings.indexOf(node), j = i + dir;
+    if (j < 0 || j >= siblings.length) return;
+    siblings.splice(i, 1); siblings.splice(j, 0, node); return commit();
+  }
+  if (d.addgo) return add(d.addgo);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.dataset.new){ e.preventDefault(); add(e.target.dataset.new); }
+  if (e.key === 'Escape' && e.target.dataset.new){ adding = null; render(); }
+  if (e.key === 'Enter' && e.target.dataset.qty){ e.target.blur(); }
+  if (e.key === 'Enter' && e.target.isContentEditable){ e.preventDefault(); e.target.blur(); }
+});
+
+function add(where){
+  const input = document.querySelector(`[data-new="${where}"]`);
+  const raw = input.value.trim();
+  if (!raw){ input.focus(); return; }
+  const list = where === 'ROOT' ? data.nodes : find(where).node.kids;
+  raw.split(',').map(s => s.trim()).filter(Boolean).forEach(t => {
+    const wantCount = /#$/.test(t);
+    const node = N(t.replace(/\s*#$/, ''));
+    if (wantCount) node.mode = 'count';
+    list.push(node);
+  });
+  input.value = '';
+  if (where === 'ROOT') adding = null;
+  save(); render();
+  const again = document.querySelector(`[data-new="${where}"]`);
+  if (again) again.focus();
+}
+
+document.addEventListener('blur', e => {
+  const d = e.target.dataset || {};
+  if (d.text){
+    const {node} = find(d.text);
+    const v = e.target.textContent.trim();
+    if (!v) return render();
+    node.text = v; save();
+  }
+  if (d.qty){
+    const {node} = find(d.qty);
+    const v = parseInt(e.target.value, 10);
+    node.qty = isNaN(v) || v < 0 ? 0 : v;
+    if (node.qty > 0) node.st = 0;
+    commit();
+  }
+  if (e.target.id === 'trip'){ data.trip = e.target.textContent.trim(); save(); }
+}, true);
+
+document.getElementById('hide').onclick = () => { hideSorted = !hideSorted; render(); };
+document.getElementById('collapse').onclick = () => {
+  const anyOpen = data.nodes.some(n => n.kids.length && n.open);
+  walk(data.nodes, n => { if (n.kids.length) n.open = !anyOpen; });
+  commit();
+};
+document.getElementById('reset').onclick = () => {
+  if (!confirm('Clear every mark and count for a fresh trip? The list itself stays.')) return;
+  walk(data.nodes, n => { n.st = 0; n.qty = 0; });
+  hideSorted = false;
+  commit();
+};
+document.getElementById('exp').onclick = () => {
+  let out = (data.trip || 'Packing List') + '\n\n';
+  const mark = n => n.st === 2 ? '[-] ' : (isPacked(n) ? '[x] ' : '[ ] ');
+  const rec = (nodes, d) => nodes.forEach(n => {
+    const q = (!n.kids.length && n.mode === 'count' && n.qty > 0) ? ' ×' + n.qty : '';
+    out += '  '.repeat(d) + mark(n) + n.text + q + '\n';
+    rec(n.kids, d + 1);
+  });
+  rec(data.nodes, 0);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out], {type:'text/plain'}));
+  a.download = 'packing-list.txt';
+  a.click();
+};
+document.getElementById('impBtn').onclick = () => {
+  const raw = prompt('Paste a list. Indent two spaces per level to nest. Add # after a name to make it a count. This replaces the current list.');
+  if (!raw) return;
+  const roots = [], stack = [];
+  raw.split('\n').forEach(line => {
+    if (!line.trim()) return;
+    const depth = Math.floor(line.match(/^[ \t]*/)[0].replace(/\t/g, '  ').length / 2);
+    let t = line.trim().replace(/^\[[ x\-]\]\s*/i, '').replace(/^[-*•]\s*/, '');
+    const node = N(t.replace(/\s*#$/, ''));
+    if (/\s*#$/.test(t)) node.mode = 'count';
+    if (/^\s*\[x\]/i.test(line)){ node.st = 1; if (node.mode === 'count'){ node.qty = 1; node.st = 0; } }
+    if (/^\s*\[-\]/.test(line)) node.st = 2;
+    stack.length = Math.min(stack.length, depth);
+    if (!stack.length) roots.push(node); else stack[stack.length - 1].kids.push(node);
+    stack.push(node);
+  });
+  if (!roots.length) return;
+  data = {trip: data.trip, nodes: roots};
+  commit();
+};
+
+(async function init(){
+  try { data = JSON.parse(await store.get()); if (!data || !data.nodes) throw 0; }
+  catch(e){ data = SEED; save(); }
+  render();
+})();
+</script>
+</body>
+</html>
