@@ -4,9 +4,15 @@ A personal packing checklist. Replaces a Google Sheet that was painful to use on
 
 ## What it is
 
-One self-contained `index.html` — no build step, no dependencies, no framework, no backend.
-Deployed to GitHub Pages and saved to the home screen on iOS as a standalone web app.
+All the app logic is in one `index.html` — no build step, no dependencies, no framework, no backend.
+Deployed to GitHub Pages and installed to the home screen as a standalone web app.
 State lives in the browser (`localStorage`), so the list is per-device and nothing is sent anywhere.
+
+Alongside it sit `manifest.webmanifest`, `icon.svg`, `icon-192.png`, `icon-512.png` and
+`apple-touch-icon.png`. Those exist only so Android Chrome offers a real **Install** (rather
+than a bookmark) and so the home screen shows a white check on teal instead of a generic
+letter. They are static assets, not dependencies — the app still runs from `index.html` alone
+if you open it directly.
 
 `index.html` also detects `window.storage` and uses it when present, which is only true when
 the file is previewed inside Claude. On a normal web host it falls through to `localStorage`.
