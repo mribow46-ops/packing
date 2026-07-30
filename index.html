@@ -86,6 +86,14 @@ button.primary{background:var(--teal);border-color:var(--teal);color:#fff}
 .foot{display:flex;gap:7px;padding:11px 12px;background:#f8fafb}
 .foot input{flex:1;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-height:40px;background:#fff}
 .note{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-2);text-align:center;margin-top:20px;letter-spacing:.06em}
+
+/* import sheet */
+.modal{position:fixed;inset:0;background:rgba(22,32,43,.55);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}
+.mcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;width:100%;max-width:560px;display:flex;flex-direction:column;gap:10px;max-height:100%}
+.mcard h2{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:15px;font-weight:600;margin:0}
+.mcard p{font-size:12.5px;color:var(--ink-2);margin:0;line-height:1.5}
+.mcard textarea{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;line-height:1.5;border:1px solid var(--line);border-radius:8px;padding:10px;min-height:34vh;resize:vertical;background:#fff;color:var(--ink)}
+.mrow{display:flex;gap:7px;justify-content:flex-end}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -148,7 +156,9 @@ const SEED = {
     N('Tefillin'),
     N('Underwear', [C('Boxers'), C('Undershirts'), N('PJ Shorts')]),
     N('Shabbos Clothes', [
-      N('Shabbos Shirts', [N('Collar Stays'), N('Cufflinks')]),
+      C('Shabbos Shirts'),
+      N('Collar Stays'),
+      N('Cufflinks'),
       N('Shabbos Tzitzis'),
       N('Suit Pants', [N('Belt')]),
       N('Suit Jacket'),
@@ -411,9 +421,8 @@ document.getElementById('exp').onclick = () => {
   a.download = 'packing-list.txt';
   a.click();
 };
-document.getElementById('impBtn').onclick = () => {
-  const raw = prompt('Paste a list. Indent two spaces per level to nest. Add # after a name to make it a count. This replaces the current list.');
-  if (!raw) return;
+/* text -> tree. two spaces per level; trailing # makes a count */
+function parseList(raw){
   const roots = [], stack = [];
   raw.split('\n').forEach(line => {
     if (!line.trim()) return;
@@ -427,9 +436,40 @@ document.getElementById('impBtn').onclick = () => {
     if (!stack.length) roots.push(node); else stack[stack.length - 1].kids.push(node);
     stack.push(node);
   });
-  if (!roots.length) return;
-  data = {trip: data.trip, nodes: roots};
-  commit();
+  return roots;
+}
+
+/* a textarea, not prompt() — prompt is single-line and phones strip the line breaks */
+document.getElementById('impBtn').onclick = () => {
+  const ov = document.createElement('div');
+  ov.className = 'modal';
+  ov.innerHTML =
+    `<div class="mcard">
+       <h2>Import a list</h2>
+       <p>Paste below. Two spaces of indent for each level of nesting. Put # after a name to make it a count. This replaces the whole list — export first if you want a copy.</p>
+       <textarea spellcheck="false" autocapitalize="off" data-imp
+         placeholder="Laptop&#10;Phone&#10;  Table Charger&#10;Socks #"></textarea>
+       <div class="mrow">
+         <button data-impcancel>Cancel</button>
+         <button class="primary" data-impgo>Replace list</button>
+       </div>
+     </div>`;
+  document.body.appendChild(ov);
+  const ta = ov.querySelector('[data-imp]');
+  ta.focus();
+  const close = () => ov.remove();
+  ov.querySelector('[data-impcancel]').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  ov.querySelector('[data-impgo]').onclick = () => {
+    const nodes = parseList(ta.value);
+    if (!nodes.length){ ta.focus(); return; }
+    const n = nodes.flatMap(leaves).length;
+    if (!confirm('Replace the whole list with these ' + n + ' items?')) return;
+    data = {trip: data.trip, nodes};
+    close();
+    commit();
+  };
 };
 
 (async function init(){
