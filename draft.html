@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packing List — draft your import</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16202b; --ink-2:#54626e; --faint:#9aa7b1;
+  --paper:#eceef0; --card:#fff; --line:#d8dee3; --hair:#eef1f3;
+  --teal:#1f6f68; --slate:#8996a1; --red:#b4453a; --amber:#8a6100;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.45}
+.page{max-width:1100px;margin:0 auto;padding:16px 14px 60px}
+
+h1{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:22px;margin:0 0 2px}
+.lede{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin:0 0 16px}
+
+.cols{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.left{flex:1 1 420px;min-width:320px;display:flex;flex-direction:column;gap:10px}
+.right{flex:0 0 auto}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.panel h2{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:13px;font-weight:600;margin:0 0 8px}
+
+textarea{width:100%;min-height:52vh;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;line-height:1.55;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff;color:var(--ink);resize:vertical;tab-size:2}
+textarea:focus{outline:2px solid var(--teal);outline-offset:1px}
+
+button{font-family:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:8px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink-2)}
+button.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.bar{display:flex;gap:7px;flex-wrap:wrap}
+
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-2)}
+.stats b{display:block;font-size:19px;color:var(--ink);font-weight:600;line-height:1.2}
+
+.msgs{display:flex;flex-direction:column;gap:6px}
+.msg{font-size:12.5px;line-height:1.5;padding:8px 10px;border-radius:8px;border-left:3px solid;border-radius:0 8px 8px 0}
+.msg.err{background:#fdf0ef;border-color:var(--red);color:#7c2f27}
+.msg.warn{background:#fdf6e6;border-color:#c99700;color:#6b4c00}
+.msg.ok{background:#eaf4f2;border-color:var(--teal);color:#14504a}
+.msg code{font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.05);padding:1px 4px;border-radius:3px}
+
+/* ---- faithful phone preview: 375px wide, same paddings as the real app ---- */
+.phone{width:375px;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.phone .wrap{padding:14px}
+.tag{background:var(--ink);color:#fff;border-radius:12px;padding:14px 16px 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;position:relative;overflow:hidden}
+.tag::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background-image:radial-gradient(circle at 5px 3px,var(--paper) 3px,transparent 3.5px);background-size:12px 6px}
+.tag h3{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:26px;margin:0;line-height:1}
+.sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8fa3ad;margin-top:9px}
+.cnt{font-family:'JetBrains Mono',monospace;text-align:right}
+.cnt b{display:block;font-size:26px;font-weight:600;line-height:1}
+.cnt span{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8fa3ad}
+
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}
+.row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--hair)}
+.row:last-child{border-bottom:0}
+.row[data-depth="0"]>.label{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:16px;font-weight:500}
+.row[data-depth="0"].branch{background:#fbfcfc}
+.row.flagged{background:#fdf6e6}
+.indent{flex:0 0 auto;align-self:stretch;display:flex}
+.indent i{display:block;width:16px;border-left:1px solid var(--line);margin-left:7px}
+.caret{border:0;background:var(--hair);color:var(--ink-2);width:30px;min-height:38px;font-size:14px;flex:0 0 30px;border-radius:8px;line-height:1}
+.caret.pad{visibility:hidden;background:transparent;min-height:0}
+.box{width:23px;height:23px;flex:0 0 23px;border:1.5px solid var(--line);border-radius:5px;background:#fff}
+.stp{display:flex;align-items:center;flex:0 0 auto;border:1.5px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}
+.stp s{width:28px;text-align:center;color:var(--ink-2);font-size:16px;text-decoration:none}
+.stp .qty{width:30px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--ink)}
+.label{flex:1;min-width:0;word-break:break-word}
+.tally{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.dots{color:#b9c3ca;font-size:17px;letter-spacing:1px}
+@media (max-width:800px){ .right{width:100%} .phone{width:375px;max-width:100%} }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Draft your import</h1>
+  <p class="lede">Type on the left · see it at real phone width on the right · nothing is saved anywhere</p>
+
+  <div class="cols">
+    <div class="left">
+      <div class="panel">
+        <h2>Your list</h2>
+        <textarea id="src" spellcheck="false" autocapitalize="off"></textarea>
+        <div class="bar" style="margin-top:9px">
+          <button class="primary" id="copy">Copy for import</button>
+          <button id="tidy">Fix indentation</button>
+          <button id="load">Load current list</button>
+          <button id="clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Totals</h2>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Checks</h2>
+        <div class="msgs" id="msgs"></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="panel" style="padding:10px">
+        <h2 style="margin-left:2px">Preview at 375px</h2>
+        <div class="phone">
+          <div class="wrap">
+            <div class="tag">
+              <div style="min-width:0">
+                <h3>Packing list</h3>
+                <div class="sub" id="pvsub">&nbsp;</div>
+              </div>
+              <div class="cnt"><b id="pvtot">0/0</b><span>sorted</span></div>
+            </div>
+            <div class="sheet" id="pvsheet"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT = `On Me
+  Phone
+  Samsung Buds #
+  Wallet
+  Keys
+All Luggage
+  Laptop Bag
+    Laptop
+    Charger
+    Mouse
+    Mousepad
+    Spare Charger
+  Hat
+  Suit Bag
+    Shabbos Shirts #
+    Suit Pants
+    Suit Jacket
+  Carry-On
+    Table Charger
+    Books #
+    Tefillin
+    Underwear
+      Boxers #
+      Undershirts #
+      PJ Shorts
+    Shabbos Clothes
+      Collar Stays
+      Cufflinks
+      Shabbos Tzitzis
+      Belt
+      Ties #
+      Raincoat
+      Socks #
+      Shabbos Shoes
+    Weekday Clothes
+      Button Shirts #
+      Polos #
+      Weekday Tzitzis #
+      Weekday Pants #
+      Socks #
+      Allbirds Trees
+      Allbirds Sugars
+    Toiletries
+      Deodorant
+      Cologne
+      Meds
+    Specialty Items
+      Fan
+      Pool Go Bag
+      Water Bottle
+      Bed Items
+      Bathrobe
+      Shaver
+      R"H/Y"K
+      Boots
+      Nail Clipper
+      Pilot Headset`;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $ = id => document.getElementById(id);
+
+/* same parse the app uses, plus line numbers so we can point at problems */
+function parse(raw){
+  const roots = [], stack = [], notes = [];
+  raw.split('\n').forEach((line, i) => {
+    if (!line.trim()) return;
+    const ws = line.match(/^[ \t]*/)[0];
+    if (ws.includes('\t')) notes.push({type:'err', line:i+1, msg:'Line ' + (i+1) + ' starts with a tab. The app counts spaces, so tabs land at the wrong level. Use two spaces per level.'});
+    const spaces = ws.replace(/\t/g,'  ').length;
+    if (spaces % 2) notes.push({type:'warn', line:i+1, msg:'Line ' + (i+1) + ' is indented ' + spaces + ' spaces, which is not a multiple of two. It gets rounded down, so it may not land where you expect.'});
+    const depth = Math.floor(spaces / 2);
+    let t = line.trim().replace(/^\[[ x\-]\]\s*/i,'').replace(/^[-*•]\s*/,'');
+    const count = /\s*#$/.test(t);
+    const node = {text:t.replace(/\s*#$/,''), count, kids:[], depth, line:i+1};
+    if (!node.text) { notes.push({type:'err', line:i+1, msg:'Line ' + (i+1) + ' has no name.'}); return; }
+    const prev = stack.length ? stack[stack.length-1].depth : -1;
+    if (depth > prev + 1 && stack.length) notes.push({type:'warn', line:i+1, msg:'"' + node.text + '" (line ' + (i+1) + ') jumps in more than one level at once. It will be pulled back to sit under the line above it.'});
+    stack.length = Math.min(stack.length, depth);
+    if (!stack.length) roots.push(node); else stack[stack.length-1].kids.push(node);
+    stack.push(node);
+  });
+  return {roots, notes};
+}
+
+const leaves = n => n.kids.length ? n.kids.flatMap(leaves) : [n];
+
+function render(){
+  const raw = $('src').value;
+  const {roots, notes} = parse(raw);
+
+  /* preview */
+  const sheet = $('pvsheet');
+  sheet.innerHTML = '';
+  const draw = (nodes, d) => nodes.forEach(n => {
+    const row = document.createElement('div');
+    row.className = 'row' + (n.kids.length ? ' branch' : '');
+    row.dataset.depth = Math.min(d, 3);
+    row.dataset.line = n.line;
+    const ind = '<i></i>'.repeat(d);
+    const isCount = !n.kids.length && n.count;
+    row.innerHTML =
+      (d ? '<span class="indent">' + ind + '</span>' : '') +
+      (n.kids.length ? '<span class="caret">&#9662;</span>' : '<span class="caret pad"></span>') +
+      (isCount ? '<span class="stp"><s>&minus;</s><span class="qty">0</span><s>+</s></span>'
+               : '<span class="box"></span>') +
+      '<span class="label">' + esc(n.text) + '</span>' +
+      (n.kids.length ? '<span class="tally">0/' + leaves(n).length + '</span>' : '') +
+      '<span class="dots">&middot;&middot;&middot;</span>';
+    sheet.appendChild(row);
+    if (n.kids.length) draw(n.kids, d + 1);
+  });
+  draw(roots, 0);
+
+  /* totals */
+  const all = roots.flatMap(leaves);
+  const counts = all.filter(n => n.count).length;
+  const cats = [];
+  (function walk(ns){ ns.forEach(n => { if (n.kids.length) cats.push(n); walk(n.kids); }); })(roots);
+  const maxD = Math.max(0, ...cats.concat(all).map(n => n.depth));
+  $('pvtot').textContent = '0/' + all.length;
+  $('pvsub').textContent = all.length ? all.length + ' still to sort' : 'Empty list';
+  $('stats').innerHTML =
+    '<div><b>' + all.length + '</b>items to pack</div>' +
+    '<div><b>' + cats.length + '</b>categories</div>' +
+    '<div><b>' + counts + '</b>counters</div>' +
+    '<div><b>' + (maxD + 1) + '</b>levels deep</div>';
+
+  /* checks that need the rendered rows */
+  const msgs = notes.slice();
+  const rows = [...sheet.querySelectorAll('.row')];
+  const wrapped = rows.filter(r => r.getBoundingClientRect().height > 60);
+  wrapped.forEach(r => r.classList.add('flagged'));
+  if (wrapped.length){
+    msgs.push({type:'warn', msg: wrapped.length + ' row' + (wrapped.length>1?'s':'') + ' wrap onto two lines at phone width (highlighted in the preview): ' +
+      wrapped.map(r => '"' + r.querySelector('.label').textContent + '"').join(', ') + '. Shorter names or one level less would fix it.'});
+  }
+  if (maxD >= 3) msgs.push({type:'warn', msg:'This goes ' + (maxD+1) + ' levels deep. Each level eats about 23px of the row, so names at the deepest level get cramped on a phone.'});
+  cats.forEach(c => { if (c.kids.length === 1) msgs.push({type:'warn', msg:'"' + c.text + '" has only one item inside it. A category with one child adds a level without adding much.'}); });
+  (function dupes(ns, where){
+    const seen = {};
+    ns.forEach(n => { const k = n.text.toLowerCase(); if (seen[k]) msgs.push({type:'warn', msg:'"' + n.text + '" appears twice in the same group' + (where ? ' (' + where + ')' : ' at the top level') + '. That is fine, just checking it is deliberate.'}); seen[k] = 1; dupes(n.kids, n.text); });
+  })(roots, '');
+  cats.forEach(c => { if (c.count) msgs.push({type:'warn', msg:'"' + c.text + '" has a # but also has items inside it. Categories cannot be counters — the # is ignored and its box becomes a summary of what is below.'}); });
+
+  const box = $('msgs');
+  if (!msgs.length){
+    box.innerHTML = '<div class="msg ok">Nothing to flag. This will import exactly as shown.</div>';
+  } else {
+    box.innerHTML = msgs.map(m => '<div class="msg ' + (m.type === 'err' ? 'err' : 'warn') + '">' + esc(m.msg) + '</div>').join('');
+  }
+}
+
+$('src').addEventListener('input', render);
+$('clear').onclick = () => { $('src').value = ''; render(); $('src').focus(); };
+$('load').onclick = () => { $('src').value = DEFAULT; render(); };
+$('tidy').onclick = () => {
+  const out = [], stack = [];
+  $('src').value.split('\n').forEach(line => {
+    if (!line.trim()) return;
+    const spaces = line.match(/^[ \t]*/)[0].replace(/\t/g,'  ').length;
+    let d = Math.round(spaces / 2);
+    d = Math.min(d, stack.length);
+    stack.length = d;
+    stack.push(1);
+    out.push('  '.repeat(d) + line.trim());
+  });
+  $('src').value = out.join('\n');
+  render();
+};
+$('copy').onclick = async () => {
+  const b = $('copy');
+  try { await navigator.clipboard.writeText($('src').value); b.textContent = 'Copied'; }
+  catch(e){ $('src').select(); b.textContent = 'Selected — press Ctrl+C'; }
+  setTimeout(() => b.textContent = 'Copy for import', 1800);
+};
+
+$('src').value = DEFAULT;
+render();
+</script>
+</body>
+</html>
